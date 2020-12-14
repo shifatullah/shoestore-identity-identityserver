@@ -23,7 +23,9 @@ namespace ShoeStore.Identity.IdentityServer
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddRazorPages();
+            //services.AddRazorPages();
+
+            services.AddControllersWithViews();
 
             services.AddIdentityServer()
                 .AddInMemoryClients(Clients.Get())
@@ -55,7 +57,8 @@ namespace ShoeStore.Identity.IdentityServer
             app.UseIdentityServer();
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapRazorPages();
+                //endpoints.MapRazorPages();
+                endpoints.MapDefaultControllerRoute();
             });
         }
 
