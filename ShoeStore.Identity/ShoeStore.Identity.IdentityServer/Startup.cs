@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using IdentityModel;
+using IdentityServer4;
 
 namespace ShoeStore.Identity.IdentityServer
 {
@@ -75,6 +76,25 @@ namespace ShoeStore.Identity.IdentityServer
                         ClientSecrets = new List<Secret> {
                             new Secret("SuperSecretPassword".Sha256())},
                         AllowedScopes = new List<string> { "productsAPI.read" }
+                    },
+                    new Client {
+                        ClientId = "adminClient",
+                        ClientName = "Example Client Application",
+                        ClientSecrets = new List<Secret> { new Secret("SuperSecretPassword".Sha256()) }, // change me!
+
+                        AllowedGrantTypes = GrantTypes.Code,
+                        RedirectUris = new List<string> { "https://localhost:5002/signin-oidc" },
+                        AllowedScopes = new List<string>
+                        {
+                            IdentityServerConstants.StandardScopes.OpenId,
+                            IdentityServerConstants.StandardScopes.Profile,
+                            IdentityServerConstants.StandardScopes.Email,
+                            "role",
+                            "productsAPI.read"
+                        },
+
+                        RequirePkce = true,
+                        AllowPlainTextPkce = false
                     }
                 };
             }
@@ -129,7 +149,7 @@ namespace ShoeStore.Identity.IdentityServer
                 {
                     new TestUser()
                     {
-                        SubjectId = "",
+                        SubjectId = "e31db763-0b10-4185-9bf8-8f395b44f315",
                         Username = "test",
                         // todo: Sensitive information will be stored in Db or Vault
                         Password = "password",
