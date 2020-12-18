@@ -9,6 +9,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using IdentityModel;
 using IdentityServer4;
+using Microsoft.EntityFrameworkCore;
+using System.Reflection;
+using IdentityServer4.EntityFramework.DbContexts;
+using System.Linq;
+using IdentityServer4.EntityFramework.Mappers;
+using Microsoft.AspNetCore.Identity;
+using System.Threading.Tasks;
 
 namespace ShoeStore.Identity.IdentityServer
 {
@@ -24,17 +31,33 @@ namespace ShoeStore.Identity.IdentityServer
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            const string connectionString = @"Server=localhost; Database=<put db here>; User Id=sa; Password=<put password here>";
+            var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
+
             //services.AddRazorPages();
+            services.AddDbContext<ApplicationDbContext>(builder =>
+                builder.UseSqlServer(connectionString, sqlOptions => sqlOptions.MigrationsAssembly(migrationsAssembly)));
+            services.AddIdentity<IdentityUser, IdentityRole>()
+                .AddEntityFrameworkStores<ApplicationDbContext>();
 
             services.AddControllersWithViews();
 
             services.AddIdentityServer()
-                .AddInMemoryClients(Clients.Get())
-                .AddInMemoryIdentityResources(Resources.GetIdentityResources())
-                .AddInMemoryApiResources(Resources.GetApiResources())
-                .AddInMemoryApiScopes(Resources.GetApiScopes())
-                .AddTestUsers(Users.Get())
-                .AddDeveloperSigningCredential();
+                //.AddInMemoryClients(Clients.Get())
+                //.AddInMemoryIdentityResources(Resources.GetIdentityResources())
+                //.AddInMemoryApiResources(Resources.GetApiResources())
+                //.AddInMemoryApiScopes(Resources.GetApiScopes())
+                //.AddTestUsers(Users.Get())
+                .AddAspNetIdentity<IdentityUser>()
+                .AddDeveloperSigningCredential()
+                .AddOperationalStore(options => options.ConfigureDbContext =
+                    builder => builder.UseSqlServer(
+                        connectionString,
+                        sqlOptions => sqlOptions.MigrationsAssembly(migrationsAssembly)))
+                .AddConfigurationStore(options => options.ConfigureDbContext =
+                    builder => builder.UseSqlServer(
+                        connectionString,
+                        sqlOptions => sqlOptions.MigrationsAssembly(migrationsAssembly)));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -50,6 +73,8 @@ namespace ShoeStore.Identity.IdentityServer
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+
+            InitializeDbTestData(app);
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
@@ -149,10 +174,11 @@ namespace ShoeStore.Identity.IdentityServer
                 {
                     new TestUser()
                     {
-                        SubjectId = "e31db763-0b10-4185-9bf8-8f395b44f315",
+                        //SubjectId = "e31db763-0b10-4185-9bf8-8f395b44f315",
+                        SubjectId = "1",
                         Username = "test",
                         // todo: Sensitive information will be stored in Db or Vault
-                        Password = "password",
+                        Password = "Password123|",
                         Claims = new List<Claim>
                         {
                             new Claim(JwtClaimTypes.Email, "dummy@dummy"),
@@ -160,6 +186,69 @@ namespace ShoeStore.Identity.IdentityServer
                         }
                     }
                 };
+            }
+        }
+
+        private static void InitializeDbTestData(IApplicationBuilder app)
+        {
+            using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
+            {
+                serviceScope.ServiceProvider.GetRequiredService<PersistedGrantDbContext>().Database.Migrate();
+                serviceScope.ServiceProvider.GetRequiredService<ConfigurationDbContext>().Database.Migrate();
+                serviceScope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.Migrate();
+
+                var context = serviceScope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
+
+                if (!context.Clients.Any())
+                {
+                    foreach (var client in Clients.Get())
+                    {
+                        context.Clients.Add(client.ToEntity());
+                    }
+                    context.SaveChanges();
+                }
+
+                if (!context.IdentityResources.Any())
+                {
+                    foreach (var resource in Resources.GetIdentityResources())
+                    {
+                        context.IdentityResources.Add(resource.ToEntity());
+                    }
+                    context.SaveChanges();
+                }
+
+                if (!context.ApiScopes.Any())
+                {
+                    foreach (var scope in Resources.GetApiScopes())
+                    {
+                        context.ApiScopes.Add(scope.ToEntity());
+                    }
+                    context.SaveChanges();
+                }
+
+                if (!context.ApiResources.Any())
+                {
+                    foreach (var resource in Resources.GetApiResources())
+                    {
+                        context.ApiResources.Add(resource.ToEntity());
+                    }
+                    context.SaveChanges();
+                }
+
+                var userManager = serviceScope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+                if (!userManager.Users.Any())
+                {
+                    foreach (var testUser in Users.Get())
+                    {
+                        var identityUser = new IdentityUser(testUser.Username)
+                        {
+                            Id = testUser.SubjectId
+                        };
+
+                        IdentityResult result = userManager.CreateAsync(identityUser, testUser.Password).Result;                        
+                        userManager.AddClaimsAsync(identityUser, testUser.Claims.ToList()).Wait();
+                    }
+                }
             }
         }
     }
