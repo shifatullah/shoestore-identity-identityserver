@@ -79,7 +79,8 @@ namespace ShoeStore.Identity.IdentityServer
                 app.UseHsts();
             }
 
-            InitializeDbTestData(app);
+            string redirectUri = Configuration.GetValue<string>("ss-identity-url");
+            InitializeDbTestData(app, redirectUri);
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
@@ -95,9 +96,9 @@ namespace ShoeStore.Identity.IdentityServer
 
         internal class Clients
         {
-            public static IEnumerable<Client> Get()
+            public static IEnumerable<Client> Get(string redirectUrl)
             {
-                //string redirectUri = Configuration.GetValue<string>("ss_identity_url");
+                
                 
                 return new List<Client> {
                     new Client {
@@ -196,7 +197,7 @@ namespace ShoeStore.Identity.IdentityServer
             }
         }
 
-        private static void InitializeDbTestData(IApplicationBuilder app)
+        private static void InitializeDbTestData(IApplicationBuilder app, string redirectUri)
         {
             using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
             {
@@ -207,8 +208,8 @@ namespace ShoeStore.Identity.IdentityServer
                 var context = serviceScope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
 
                 if (!context.Clients.Any())
-                {
-                    foreach (var client in Clients.Get())
+                {                    
+                    foreach (var client in Clients.Get(redirectUri))
                     {
                         context.Clients.Add(client.ToEntity());
                     }
