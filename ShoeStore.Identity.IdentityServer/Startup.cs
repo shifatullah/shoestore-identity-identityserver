@@ -69,6 +69,9 @@ namespace ShoeStore.Identity.IdentityServer
             {
                 options.ForwardedHeaders =
                     ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+                options.RequireHeaderSymmetry = false;
+                options.KnownNetworks.Clear();
+                options.KnownProxies.Clear();
             });
         }
 
