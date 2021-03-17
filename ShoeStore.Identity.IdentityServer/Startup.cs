@@ -18,6 +18,8 @@ using Microsoft.AspNetCore.Identity;
 using System.Threading.Tasks;
 using System;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
 
 namespace ShoeStore.Identity.IdentityServer
 {
@@ -115,6 +117,24 @@ namespace ShoeStore.Identity.IdentityServer
 
             // ref: https://github.com/aspnet/Docs/issues/2384
             app.UseForwardedHeaders();
+
+            string XForwardedPathBase = "X-Forwarded-PathBase";
+            string XForwardedProto = "X-Forwarded-Proto";
+
+            app.Use((context, next) =>
+            {
+                if (context.Request.Headers.TryGetValue(XForwardedPathBase, out StringValues pathBase))
+                {
+                    context.Request.PathBase = new PathString(pathBase);
+                }
+
+                if (context.Request.Headers.TryGetValue(XForwardedProto, out StringValues proto))
+                {
+                    context.Request.Protocol = proto;
+                }
+
+                return next();
+            });
         }
 
         internal class Clients
