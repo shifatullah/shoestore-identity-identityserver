@@ -82,10 +82,12 @@ namespace ShoeStore.Identity.IdentityServer
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+                app.UseForwardedHeaders();
             }
             else
             {
                 app.UseExceptionHandler("/Error");
+                app.UseForwardedHeaders();
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
@@ -115,7 +117,7 @@ namespace ShoeStore.Identity.IdentityServer
             //forwardOptions.KnownProxies.Clear();
 
             // ref: https://github.com/aspnet/Docs/issues/2384
-            app.UseForwardedHeaders();
+            // app.UseForwardedHeaders();
 
             string XForwardedPathBase = "X-Forwarded-PathBase";
             string XForwardedProto = "X-Forwarded-Proto";
