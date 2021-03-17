@@ -17,6 +17,7 @@ using IdentityServer4.EntityFramework.Mappers;
 using Microsoft.AspNetCore.Identity;
 using System.Threading.Tasks;
 using System;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace ShoeStore.Identity.IdentityServer
 {
@@ -92,6 +93,19 @@ namespace ShoeStore.Identity.IdentityServer
                 //endpoints.MapRazorPages();
                 endpoints.MapDefaultControllerRoute();
             });
+
+            // metadata returns as http
+            var forwardOptions = new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+                RequireHeaderSymmetry = false
+            };
+
+            forwardOptions.KnownNetworks.Clear();
+            forwardOptions.KnownProxies.Clear();
+
+            // ref: https://github.com/aspnet/Docs/issues/2384
+            app.UseForwardedHeaders(forwardOptions);
         }
 
         internal class Clients
