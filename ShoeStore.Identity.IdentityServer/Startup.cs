@@ -64,6 +64,12 @@ namespace ShoeStore.Identity.IdentityServer
                     builder => builder.UseSqlServer(
                         connectionString,
                         sqlOptions => sqlOptions.MigrationsAssembly(migrationsAssembly)));
+
+            services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders =
+                    ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -95,17 +101,17 @@ namespace ShoeStore.Identity.IdentityServer
             });
 
             // metadata returns as http
-            var forwardOptions = new ForwardedHeadersOptions
-            {
-                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
-                RequireHeaderSymmetry = false
-            };
+            //var forwardOptions = new ForwardedHeadersOptions
+            //{
+            //    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+            //    RequireHeaderSymmetry = false
+            //};
 
-            forwardOptions.KnownNetworks.Clear();
-            forwardOptions.KnownProxies.Clear();
+            //forwardOptions.KnownNetworks.Clear();
+            //forwardOptions.KnownProxies.Clear();
 
             // ref: https://github.com/aspnet/Docs/issues/2384
-            app.UseForwardedHeaders(forwardOptions);
+            app.UseForwardedHeaders();
         }
 
         internal class Clients
