@@ -69,8 +69,7 @@ namespace ShoeStore.Identity.IdentityServer
 
             services.Configure<ForwardedHeadersOptions>(options =>
             {
-                options.ForwardedHeaders =
-                    ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+                options.ForwardedHeaders = ForwardedHeaders.All;
                 options.RequireHeaderSymmetry = false;
                 options.KnownNetworks.Clear();
                 options.KnownProxies.Clear();
