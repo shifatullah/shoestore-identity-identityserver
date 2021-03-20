@@ -79,6 +79,24 @@ namespace ShoeStore.Identity.IdentityServer
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            //string XForwardedPathBase = "X-Forwarded-PathBase";
+            //string XForwardedProto = "X-Forwarded-Proto";
+
+            app.Use((context, next) =>
+            {
+                //if (context.Request.Headers.TryGetValue(XForwardedPathBase, out StringValues pathBase))
+                //{
+                //    context.Request.PathBase = new PathString(pathBase);
+                //}
+
+                //if (context.Request.Headers.TryGetValue(XForwardedProto, out StringValues proto))
+                //{
+                //    context.Request.Protocol = proto;
+                //}
+                context.Request.Scheme = "https";
+                return next();
+            });
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -118,24 +136,6 @@ namespace ShoeStore.Identity.IdentityServer
 
             // ref: https://github.com/aspnet/Docs/issues/2384
             // app.UseForwardedHeaders();
-
-            string XForwardedPathBase = "X-Forwarded-PathBase";
-            string XForwardedProto = "X-Forwarded-Proto";
-
-            app.Use((context, next) =>
-            {
-                if (context.Request.Headers.TryGetValue(XForwardedPathBase, out StringValues pathBase))
-                {
-                    context.Request.PathBase = new PathString(pathBase);
-                }
-
-                if (context.Request.Headers.TryGetValue(XForwardedProto, out StringValues proto))
-                {
-                    context.Request.Protocol = proto;
-                }
-
-                return next();
-            });
         }
 
         internal class Clients
